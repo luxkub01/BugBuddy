@@ -1,0 +1,169 @@
+﻿@model IEnumerable<BugBuddy.Models.Bug>
+
+@{
+    ViewData["Title"] = "Bugs";
+    var selectedStatus = Context.Request.Query["status"];
+    var searchTerm = Context.Request.Query["search"];
+    var sortOrder = Context.Request.Query["sort"];
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">My Bugs</h2>
+        <a asp-action="Create" class="btn btn-primary">+ Create New</a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="row mb-3 mt-3">
+            <!-- Filter by Status -->
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">-- Filter by Status --</option>
+                    @if (selectedStatus == "Open")
+                    {
+                        <option value="Open" selected>Open</option>
+                    }
+                    else
+                    {
+                        <option value="Open">Open</option>
+                    }
+
+                    @if (selectedStatus == "In Progress")
+                    {
+                        <option value="In Progress" selected>In Progress</option>
+                    }
+                    else
+                    {
+                        <option value="In Progress">In Progress</option>
+                    }
+
+                    @if (selectedStatus == "Resolved")
+                    {
+                        <option value="Resolved" selected>Resolved</option>
+                    }
+                    else
+                    {
+                        <option value="Resolved">Resolved</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Sort By -->
+            <div class="col-md-3">
+                <select name="sort" class="form-select">
+                    <option value="">-- Sort by --</option>
+                    @if (sortOrder == "dateCreated")
+                    {
+                        <option value="dateCreated" selected>Date Created</option>
+                    }
+                    else
+                    {
+                        <option value="dateCreated">Date Created</option>
+                    }
+
+                    @if (sortOrder == "lastUpdated")
+                    {
+                        <option value="lastUpdated" selected>Last Updated</option>
+                    }
+                    else
+                    {
+                        <option value="lastUpdated">Last Updated</option>
+                    }
+
+                    @if (sortOrder == "priority")
+                    {
+                        <option value="priority" selected>Priority</option>
+                    }
+                    else
+                    {
+                        <option value="priority">Priority</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input name="search" value="@searchTerm" class="form-control" placeholder="🔍 Search by title..." />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">Search</button>
+            </div>
+        </div>
+
+    </form>
+
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Updated</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@item.Description</td>
+                    <td><span class="badge bg-secondary">@item.Priority</span></td>
+                    <td>
+                        @if (item.Status == "Resolved")
+                        {
+                            <span class="badge bg-success">@item.Status</span>
+                        }
+                        else if (item.Status == "In Progress")
+                        {
+                            <span class="badge bg-warning text-dark">@item.Status</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">@item.Status</span>
+                        }
+                    </td>
+                    <td>@item.DateCreated.ToString("g")</td>
+                    <td>@item.LastUpdated.ToString("g")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Details</a>
+                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDelete(@item.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+<form id="antiForgeryTokenForm" method="post" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+<script>
+    function confirmDelete(id) {
+        const confirmation = prompt("Type 'delete' to confirm deletion:");
+        if (confirmation?.toLowerCase() === 'delete') {
+            const token = document.querySelector('#antiForgeryTokenForm input[name="__RequestVerificationToken"]').value;
+
+            fetch(`/Bugs/Delete/${id}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': token
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload(); // Refresh the page after delete
+                    } else {
+                        alert("Error deleting the bug.");
+                    }
+                })
+                .catch(error => {
+                    console.error("Delete failed:", error);
+                    alert("Something went wrong.");
+                });
+        } else {
+            alert("Deletion cancelled.");
+        }
+    }
+</script>
