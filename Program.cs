@@ -1,42 +1,66 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using System;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using BugBuddy.Data;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Options;
 using BugBuddy.Data;
 using BugBuddy.Helpers;
+using Microsoft.Extensions.Configuration;
+
+if (args.Contains("--print-connection"))
+{
+    var config = new ConfigurationBuilder()
+        .SetBasePath(Directory.GetCurrentDirectory())
+        .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+        .Build();
+
+    Console.WriteLine("🔌 Using connection: " + config.GetConnectionString("DefaultConnection"));
+    return;
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Force override any other configuration sources with only appsettings.json
+var forcedConfig = new ConfigurationBuilder()
+    .SetBasePath(Directory.GetCurrentDirectory())
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .Build();
+
+builder.Configuration.AddConfiguration(forcedConfig);
+
+// Load connection string from config (Neon PostgreSQL)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("🔌 Using connection: " + connectionString);
+
+// Register DbContext
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-//builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-//    .AddEntityFrameworkStores<ApplicationDbContext>();
+// Configure Identity
 builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
-
-    // 🔐 Custom Password Requirements
     options.Password.RequiredLength = 8;
     options.Password.RequireDigit = true;
     options.Password.RequireUppercase = true;
-    options.Password.RequireLowercase = false; // optional
-    options.Password.RequireNonAlphanumeric = false; // 🔥 This disables special character requirement
+    options.Password.RequireLowercase = false;
+    options.Password.RequireNonAlphanumeric = false;
 })
 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-
-builder.Services.AddControllersWithViews();
+// Load and register SMTP settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
-builder.Services.AddSingleton(resolver =>
-    resolver.GetRequiredService<Microsoft.Extensions.Options.IOptions<SmtpSettings>>().Value);
+var smtpSettingsSection = builder.Configuration.GetSection("SmtpSettings");
+Console.WriteLine("📧 SMTP Username: " + smtpSettingsSection["UserName"]);
+Console.WriteLine("🔐 SMTP Password: " + smtpSettingsSection["Password"]);
+builder.Services.AddScoped<IEmailSender, EmailSender>();
+builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();
@@ -44,15 +68,12 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
 
 app.MapControllerRoute(

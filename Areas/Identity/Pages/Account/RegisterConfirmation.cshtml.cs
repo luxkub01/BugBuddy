@@ -80,10 +80,10 @@ namespace BugBuddy.Areas.Identity.Pages.Account
                 // Prepare the user confirmation email
                 var confirmationEmail = new SMTPEmailObject
                 {
-                    Port = int.TryParse(_smtpSettings.Port, out int port) && port > 0 ? port : 587,
-                    Server = _smtpSettings.Server,
-                    From = _smtpSettings.Username,
-                    Username = _smtpSettings.Username,
+                    Port = _smtpSettings.Port > 0 ? _smtpSettings.Port : 587,
+                    Server = _smtpSettings.Host,
+                    From = _smtpSettings.UserName,
+                    Username = _smtpSettings.UserName,
                     Password = _smtpSettings.Password,
 
                     To = user.Email,
