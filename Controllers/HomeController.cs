@@ -20,7 +20,7 @@ public class HomeController : Controller
 
     public IActionResult Privacy()
     {
-        return View();
+        return RedirectToPage("/Privacy");
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

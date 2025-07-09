@@ -1,5 +1,6 @@
 ﻿using System;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.Extensions.Options;
@@ -52,6 +53,8 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 
 // Load and register SMTP settings
 builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
+builder.Services.AddSingleton(resolver =>
+    resolver.GetRequiredService<IOptions<SmtpSettings>>().Value);
 var smtpSettingsSection = builder.Configuration.GetSection("SmtpSettings");
 Console.WriteLine("📧 SMTP Username: " + smtpSettingsSection["UserName"]);
 Console.WriteLine("🔐 SMTP Password: " + smtpSettingsSection["Password"]);

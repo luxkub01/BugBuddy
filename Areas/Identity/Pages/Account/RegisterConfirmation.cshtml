@@ -1,18 +1,23 @@
-﻿using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿@page
+@model BugBuddy.Areas.Identity.Pages.Account.RegisterConfirmationModel
+@{
+    ViewData["Title"] = "Register Confirmation";
+}
 
-namespace BugBuddy.Areas.Identity.Pages.Account
+<h1>Confirm your email</h1>
+
+@if (Model.DisplayConfirmAccountLink && !string.IsNullOrEmpty(Model.EmailConfirmationUrl))
 {
-    public class RegisterConfirmationModel : PageModel
-    {
-        public bool DisplayConfirmAccountLink { get; set; }
-        public string? EmailConfirmationUrl { get; set; }
-
-        public void OnGet()
-        {
-            // DEV-only: show the confirm-email link in the browser
-            DisplayConfirmAccountLink = true;
-            EmailConfirmationUrl =
-                "https://localhost:5175/Identity/Account/ConfirmEmail?userId=123&code=abc";
-        }
-    }
+    <p>
+        We've sent a confirmation email. For development purposes, you can click the link below to confirm your account:
+    </p>
+    <p>
+        <a href="@Model.EmailConfirmationUrl">Confirm Email</a>
+    </p>
+}
+else
+{
+    <p>
+        We've sent you a confirmation email. Please check your inbox to complete registration.
+    </p>
 }

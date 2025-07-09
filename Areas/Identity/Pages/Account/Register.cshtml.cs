@@ -19,9 +19,7 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.Extensions.Logging;            
-    using System.ComponentModel.DataAnnotations;
-using System.Text.RegularExpressions;
+using Microsoft.Extensions.Logging;
 
 namespace BugBuddy.Areas.Identity.Pages.Account
 {
@@ -49,65 +47,36 @@ namespace BugBuddy.Areas.Identity.Pages.Account
             _emailSender = emailSender;
         }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         [BindProperty]
         public InputModel Input { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public string ReturnUrl { get; set; }
-
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public IList<AuthenticationScheme> ExternalLogins { get; set; }
 
-        /// <summary>
-        ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-        ///     directly from your code. This API may change or be removed in future releases.
-        /// </summary>
         public class InputModel
         {
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [Display(Name = "First name")]
-            public string FirstName { get; set; }    
+            public string FirstName { get; set; }
+
             [Required]
             [Display(Name = "Last name")]
-            public string LastName { get; set; }    
+            public string LastName { get; set; }
+
             [Required]
             public string Email { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [Required]
             [PasswordComplexityAttribute]
-            //[StringLength(100, ErrorMessage = "Must be at least 8 characters.", MinimumLength = 8)]
             [DataType(DataType.Password)]
             [Display(Name = "Password")]
             public string Password { get; set; }
 
-            /// <summary>
-            ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
-            ///     directly from your code. This API may change or be removed in future releases.
-            /// </summary>
             [DataType(DataType.Password)]
             [Display(Name = "Confirm password")]
             [Compare("Password", ErrorMessage = "The password and confirm password do not match.")]
             public string ConfirmPassword { get; set; }
         }
-
 
         public async Task OnGetAsync(string returnUrl = null)
         {
@@ -119,6 +88,7 @@ namespace BugBuddy.Areas.Identity.Pages.Account
         {
             returnUrl ??= Url.Content("~/bugs");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
                 var user = CreateUser();
@@ -145,23 +115,16 @@ namespace BugBuddy.Areas.Identity.Pages.Account
                     await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
                         $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
-                    {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
-                    }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
+                    // Always redirect to RegisterConfirmation
+                    return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
             }
 
-            // If we got this far, something failed, redisplay form
             return Page();
         }
 
@@ -174,8 +137,7 @@ namespace BugBuddy.Areas.Identity.Pages.Account
             catch
             {
                 throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor, or alternatively " +
-                    $"override the register page in /Areas/Identity/Pages/Account/Register.cshtml");
+                    $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor.");
             }
         }
 
@@ -189,7 +151,7 @@ namespace BugBuddy.Areas.Identity.Pages.Account
         }
     }
 
-public class PasswordComplexityAttribute : ValidationAttribute
+    public class PasswordComplexityAttribute : ValidationAttribute
     {
         public PasswordComplexityAttribute()
         {
@@ -210,5 +172,4 @@ public class PasswordComplexityAttribute : ValidationAttribute
             return hasLength && hasUpper && hasNumber;
         }
     }
-
 }
